@@ -1,6 +1,6 @@
 package com.example.androidweatherapi.domain.repository
 
-import com.example.androidweatherapi.domain.entity.nearcities.NearCities
+import com.example.androidweatherapi.domain.entity.citylistitem.CityListItem
 import com.example.androidweatherapi.domain.entity.detail.Weather
 
 interface WeatherRepository {
@@ -11,5 +11,5 @@ interface WeatherRepository {
 
     suspend fun getWeatherByCityId(id: Int) : Weather
 
-    suspend fun getNearCities(longitude: Double, latitude: Double, count: Int) : NearCities
+    suspend fun getNearCities(longitude: Double, latitude: Double, count: Int) : List<CityListItem>
 }

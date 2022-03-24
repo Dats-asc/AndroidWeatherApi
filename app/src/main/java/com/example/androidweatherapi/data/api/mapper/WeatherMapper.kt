@@ -1,12 +1,15 @@
 package com.example.androidweatherapi.data.api.mapper
 
+import com.example.androidweatherapi.data.api.NearestCitiesResponse.NearCitiesResponse
+import com.example.androidweatherapi.data.api.NearestCitiesResponse.NearCity
 import com.example.androidweatherapi.data.api.WeatherResponse.*
+import com.example.androidweatherapi.domain.entity.citylistitem.CityListItem
 import com.example.androidweatherapi.domain.entity.detail.Location
 import com.example.androidweatherapi.domain.entity.detail.Weather
 
 class WeatherMapper {
 
-    fun map(response: WeatherResponse): Weather = Weather(
+    fun mapWeatherResponse(response: WeatherResponse): Weather = Weather(
         base = response.base,
         clouds = mapClouds(response.clouds),
         cod = response.cod,
@@ -20,9 +23,23 @@ class WeatherMapper {
         visibility = response.visibility,
         weather = mapWeather(response.weather),
         wind = mapWind(response.wind),
-
-
         )
+
+    fun mapNearCitiesResponse(response: NearCitiesResponse) : List<CityListItem>{
+        val cityList = mutableListOf<CityListItem>()
+        response.list.forEach{ city ->
+            cityList.add(mapNearCity(city))
+        }
+        return cityList
+    }
+
+    private fun mapNearCity(city: NearCity) = CityListItem(
+        id = city.id,
+        name = city.name,
+        temp = city.main.temp,
+        minTemp = city.main.temp_min,
+        maxTemp = city.main.temp_max
+    )
 
     private fun mapMain(responseMain: Main) =
         com.example.androidweatherapi.domain.entity.detail.Main(

@@ -4,21 +4,21 @@ import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.androidweatherapi.domain.entity.nearcities.NearCity
 import com.example.androidweatherapi.databinding.ItemCityBinding
+import com.example.androidweatherapi.domain.entity.citylistitem.CityListItem
 
 class CityHolder (
     private val binding: ItemCityBinding,
     private val action: (Int) -> Unit
 ) : RecyclerView.ViewHolder(binding.root){
 
-    fun bind(item: NearCity){
+    fun bind(item: CityListItem){
         with(binding){
             tvCity.text = item.name
-            tvTemp.text = item.main.temp.toInt().toString() + "℃"
-            tvMinTemp.text = item.main.temp_min.toInt().toString() + "°"
-            tvMaxTemp.text = item.main.temp_max.toInt().toString() + "°"
-            when(item.main.temp.toInt()){
+            tvTemp.text = item.temp.toInt().toString() + "℃"
+            tvMinTemp.text = item.minTemp.toInt().toString() + "°"
+            tvMaxTemp.text = item.maxTemp.toInt().toString() + "°"
+            when(item.temp.toInt()){
                 in -40..-10 -> tvTemp.setTextColor(Color.BLUE)
                 in -9..0 -> tvTemp.setTextColor(Color.GREEN)
                 in 1..10 -> tvTemp.setTextColor(Color.WHITE)
@@ -33,7 +33,6 @@ class CityHolder (
     }
 
     companion object{
-
         fun create(
             parent: ViewGroup,
             action: (Int) -> Unit

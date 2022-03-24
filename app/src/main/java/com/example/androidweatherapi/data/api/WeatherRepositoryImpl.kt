@@ -1,8 +1,7 @@
 package com.example.androidweatherapi.data.api
 
-import com.example.androidweatherapi.domain.entity.nearcities.NearCities
-import com.example.androidweatherapi.data.api.WeatherResponse.WeatherResponse
 import com.example.androidweatherapi.data.api.mapper.WeatherMapper
+import com.example.androidweatherapi.domain.entity.citylistitem.CityListItem
 import com.example.androidweatherapi.domain.entity.detail.Weather
 import com.example.androidweatherapi.domain.repository.WeatherRepository
 import okhttp3.Interceptor
@@ -44,18 +43,18 @@ class WeatherRepositoryImpl(
     }
 
     override suspend fun getWeatherByCityName(name: String): Weather {
-        return weatherMapper.map(api.getWeatherByCityName(name))
+        return weatherMapper.mapWeatherResponse(api.getWeatherByCityName(name))
     }
 
     override suspend fun getWeatherByLocation(longitude: Double, latitude: Double) : Weather{
-        return weatherMapper.map(api.getWeatherByLocation(longitude, latitude))
+        return weatherMapper.mapWeatherResponse(api.getWeatherByLocation(longitude, latitude))
     }
 
     override suspend fun getWeatherByCityId(cityId: Int) : Weather{
-        return weatherMapper.map(api.getWeatherByCityId(cityId))
+        return weatherMapper.mapWeatherResponse(api.getWeatherByCityId(cityId))
     }
 
-    override suspend fun getNearCities(longitude: Double, latitude: Double, count: Int) : NearCities {
-        return api.getNearCities(longitude, latitude, count)
+    override suspend fun getNearCities(longitude: Double, latitude: Double, count: Int) : List<CityListItem> {
+        return weatherMapper.mapNearCitiesResponse(api.getNearCities(longitude, latitude, count))
     }
 }

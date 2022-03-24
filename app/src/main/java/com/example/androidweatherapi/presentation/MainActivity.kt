@@ -3,48 +3,36 @@ package com.example.androidweatherapi.presentation
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.lifecycle.lifecycleScope
-import com.example.androidweatherapi.domain.entity.nearcities.NearCities
-import com.example.androidweatherapi.domain.entity.nearcities.NearCity
+import androidx.lifecycle.ViewModelProvider
 import com.example.androidweatherapi.data.api.WeatherRepositoryImpl
-import com.example.androidweatherapi.data.api.WeatherResponse.WeatherResponse
 import com.example.androidweatherapi.data.api.mapper.WeatherMapper
 import com.example.androidweatherapi.databinding.ActivityMainBinding
 import com.example.androidweatherapi.domain.entity.detail.Weather
-import com.example.androidweatherapi.domain.usecase.GetWeatherByIdUseCase
-import com.example.androidweatherapi.domain.usecase.GetWeatherByLocationUseCase
+import com.example.androidweatherapi.domain.usecase.GetNearCitiesUseCase
 import com.example.androidweatherapi.domain.usecase.GetWeatherUseCase
-import com.example.androidweatherapi.presentation.cities.City
 import com.example.androidweatherapi.presentation.cities.CityAdapter
+import com.example.androidweatherapi.utils.MainViewModelFactory
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity(), androidx.appcompat.widget.SearchView.OnQueryTextListener {
 
     companion object {
         private const val CITY_ID = "CITY_ID"
+        private const val CITY_COUNT = 10
     }
 
-    private lateinit var getWeatherUseCase: GetWeatherUseCase
-
-    private val repository by lazy {
-        WeatherRepositoryImpl(WeatherMapper())
-    }
+    private lateinit var viewModel: MainViewModel
 
     private lateinit var binding: ActivityMainBinding
 
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
-
-    private var nearestCities: MutableList<City> = mutableListOf()
 
     private var cityAdapter: CityAdapter? = null
 
@@ -59,8 +47,10 @@ class MainActivity : AppCompatActivity(), androidx.appcompat.widget.SearchView.O
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        init()
+        initObservers()
         binding.svSearch.setOnQueryTextListener(this)
-        initUseCases()
 
         if (ActivityCompat.checkSelfPermission(
                 this,
@@ -69,26 +59,13 @@ class MainActivity : AppCompatActivity(), androidx.appcompat.widget.SearchView.O
         ) {
             requestLocationAccess()
         }
-
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
-        getLocation()
+        loadWeatherFromNearCities()
     }
 
 
     override fun onQueryTextSubmit(p0: String?): Boolean {
-        lifecycleScope.launch {
-            var response: Weather? = null
-            try {
-                response = getCityByName(p0 ?: "")
-            } catch (ex: Exception) {
-                Log.e("ds", ex.message.toString())
-            }
-
-            if (response != null)
-                navigateToDetail(response)
-            else
-                Snackbar.make(binding.root, "City not found", Snackbar.LENGTH_LONG).show()
-        }
+        viewModel.onQuerySubmit(p0)
         return true
     }
 
@@ -100,7 +77,7 @@ class MainActivity : AppCompatActivity(), androidx.appcompat.widget.SearchView.O
         locationPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
     }
 
-    private fun getLocation(): Unit {
+    private fun loadWeatherFromNearCities() {
         if (ActivityCompat.checkSelfPermission(
                 this,
                 ACCESS_COARSE_LOCATION
@@ -110,44 +87,16 @@ class MainActivity : AppCompatActivity(), androidx.appcompat.widget.SearchView.O
 
             locationTask.addOnSuccessListener {
                 it?.let {
-                    Log.e("Location - ", "Longitude: ${it.longitude}, latitude: ${it.latitude}")
-                    lifecycleScope.launch {
-                        var cities = findNearCities(it)
-                        delay(1000)
-                        setAdapter(cities)
-                    }
-                }
-                if (it == null) {
-                    Log.e("location", "is null")
+                    viewModel.getNearCities(it.longitude, it.latitude, CITY_COUNT)
+                } ?: run {
+                    viewModel.getNearCities(0.0, 0.0, CITY_COUNT)
                 }
             }
             locationTask.addOnFailureListener {
                 Log.e("location exp.", it.message.toString())
             }
-        }
-    }
-
-    private suspend fun findNearCities(location: Location): List<NearCity> {
-        var response: NearCities? = null
-        lifecycleScope.launch {
-            response = repository.getNearCities(location.longitude, location.latitude, 10)
-        }.join()
-        return response?.list ?: listOf()
-    }
-
-    private fun setAdapter(cities: List<NearCity>) {
-        cityAdapter = CityAdapter(cities) {
-            startActivity(
-                Intent(
-                    this,
-                    DetailWeatherActivity::class.java
-                ).apply {
-                    putExtra(CITY_ID, it)
-                }
-            )
-        }
-        binding.rvCities?.run {
-            adapter = cityAdapter
+        } else {
+            viewModel.getNearCities(0.0, 0.0, CITY_COUNT)
         }
     }
 
@@ -160,20 +109,46 @@ class MainActivity : AppCompatActivity(), androidx.appcompat.widget.SearchView.O
         })
     }
 
-    private suspend fun getCityByName(name: String): Weather? {
-        var weather: Weather? = null
-        lifecycleScope.launch {
-            try {
-                weather = getWeatherUseCase.invoke(name)
-            } catch (ex: Exception) {
-                Log.e("", ex.message.toString())
-            }
-        }.join()
-        val t = 1
-        return weather
+    private fun initObservers() {
+        viewModel.queryWeather.observe(this) {
+            it.fold(onSuccess = { queryWeather ->
+                navigateToDetail(queryWeather)
+            }, onFailure = {
+                Snackbar.make(binding.root, "City not found", Snackbar.LENGTH_LONG).show()
+            })
+        }
+
+        viewModel.nearCityWeather.observe(this) {
+            it.fold(onSuccess = { citiesWeather ->
+                cityAdapter = CityAdapter(citiesWeather) {
+                    startActivity(
+                        Intent(
+                            this,
+                            DetailWeatherActivity::class.java
+                        ).apply {
+                            putExtra(CITY_ID, it)
+                        }
+                    )
+                }
+                binding.rvCities?.run {
+                    adapter = cityAdapter
+                }
+            }, onFailure = {
+                Snackbar.make(binding.root, "Location not found", Snackbar.LENGTH_LONG).show()
+            })
+        }
     }
 
-    private fun initUseCases() {
-        getWeatherUseCase = GetWeatherUseCase(WeatherRepositoryImpl(WeatherMapper()))
+    private fun init() {
+        val weatherRepositoryImpl = WeatherRepositoryImpl(WeatherMapper())
+        val factory = MainViewModelFactory(
+            GetWeatherUseCase(weatherRepositoryImpl),
+            GetNearCitiesUseCase(weatherRepositoryImpl)
+        )
+
+        viewModel = ViewModelProvider(
+            this,
+            factory
+        )[MainViewModel::class.java]
     }
 }

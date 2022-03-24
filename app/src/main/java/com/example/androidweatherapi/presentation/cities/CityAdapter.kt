@@ -2,10 +2,10 @@ package com.example.androidweatherapi.presentation.cities
 
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.androidweatherapi.domain.entity.nearcities.NearCity
+import com.example.androidweatherapi.domain.entity.citylistitem.CityListItem
 
 class CityAdapter (
-    private val cities: List<NearCity>,
+    private val cities: List<CityListItem>,
     private val action: (Int) -> Unit
 ) : RecyclerView.Adapter<CityHolder>() {
 

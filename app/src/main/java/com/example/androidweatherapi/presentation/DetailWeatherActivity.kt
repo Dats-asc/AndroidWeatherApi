@@ -2,25 +2,25 @@ package com.example.androidweatherapi.presentation
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.example.androidweatherapi.data.api.WeatherRepositoryImpl
-import com.example.androidweatherapi.data.api.WeatherResponse.WeatherResponse
 import com.example.androidweatherapi.data.api.mapper.WeatherMapper
 import com.example.androidweatherapi.databinding.ActivityDetailWeatherBinding
 import com.example.androidweatherapi.domain.entity.detail.Weather
 import com.example.androidweatherapi.domain.usecase.GetWeatherByIdUseCase
+import com.example.androidweatherapi.utils.DetailWeatherViewModelFactory
 import kotlinx.coroutines.launch
 
 class DetailWeatherActivity : AppCompatActivity() {
 
-    private val repository by lazy {
-        WeatherRepositoryImpl(WeatherMapper())
-    }
-
     private lateinit var getWeatherByIdUseCase: GetWeatherByIdUseCase
 
     private lateinit var binding: ActivityDetailWeatherBinding
+
+    private lateinit var viewModel: DetailWeatherViewModel
 
     private var CITY_ID = "CITY_ID"
 
@@ -28,13 +28,20 @@ class DetailWeatherActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityDetailWeatherBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        init()
+        initObservers()
 
-        initUseCases()
+        viewModel.getWeather(intent?.extras?.getInt(CITY_ID) ?: 0)
+    }
 
-        lifecycleScope.launch {
-            initData(getCityDetailWeather(intent?.extras?.getInt(CITY_ID) ?: 0)!!)
+    private fun initObservers() {
+        viewModel.detailWeather.observe(this) {
+            it.fold(onSuccess = {
+                initData(it)
+            }, onFailure = {
+                Log.e("", "wrong id")
+            })
         }
-
     }
 
     private fun initData(detailWeather: Weather) {
@@ -54,12 +61,12 @@ class DetailWeatherActivity : AppCompatActivity() {
     }
 
     private suspend fun getCityDetailWeather(cityId: Int): Weather? {
-        var response: Weather? = null
+        var cityDetailWeather: Weather? = null
         lifecycleScope.launch {
-            response = getWeatherByIdUseCase.invoke(cityId)
+            cityDetailWeather = getWeatherByIdUseCase.invoke(cityId)
         }.join()
 
-        return response
+        return cityDetailWeather
     }
 
     private fun getWindDirection(deg: Int): String {
@@ -78,7 +85,15 @@ class DetailWeatherActivity : AppCompatActivity() {
         return windDirection
     }
 
-    private fun initUseCases(){
-        getWeatherByIdUseCase = GetWeatherByIdUseCase(WeatherRepositoryImpl(WeatherMapper()))
+    private fun init() {
+        val factory = DetailWeatherViewModelFactory(
+            GetWeatherByIdUseCase(
+                WeatherRepositoryImpl(WeatherMapper())
+            )
+        )
+        viewModel = ViewModelProvider(
+            this,
+            factory
+        )[DetailWeatherViewModel::class.java]
     }
 }
