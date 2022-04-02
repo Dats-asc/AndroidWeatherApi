@@ -1,12 +1,15 @@
 package com.example.androidweatherapi.presentation
 
-import androidx.lifecycle.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.androidweatherapi.domain.entity.detail.Weather
 import com.example.androidweatherapi.domain.usecase.GetWeatherByIdUseCase
 import kotlinx.coroutines.launch
-import java.lang.Exception
+import javax.inject.Inject
 
-class DetailWeatherViewModel(
+class DetailWeatherViewModel @Inject constructor(
     private val getWeatherByIdUseCase: GetWeatherByIdUseCase
 ) : ViewModel() {
 

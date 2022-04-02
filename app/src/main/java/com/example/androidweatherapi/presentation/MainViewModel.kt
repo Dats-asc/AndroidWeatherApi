@@ -1,16 +1,18 @@
 package com.example.androidweatherapi.presentation
 
 import android.util.Log
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.lifecycle.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.androidweatherapi.domain.entity.citylistitem.CityListItem
 import com.example.androidweatherapi.domain.entity.detail.Weather
 import com.example.androidweatherapi.domain.usecase.GetNearCitiesUseCase
 import com.example.androidweatherapi.domain.usecase.GetWeatherUseCase
-import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class MainViewModel(
+class MainViewModel @Inject constructor(
     private val getWeatherUseCase: GetWeatherUseCase,
     private val getNearCitiesUseCase: GetNearCitiesUseCase
 ) : ViewModel() {
@@ -38,7 +40,7 @@ class MainViewModel(
             try {
                 val nearCitiesWeather = getNearCitiesUseCase.invoke(longitude, latitude, count)
                 _nearCityWeather.value = Result.success(nearCitiesWeather)
-            } catch (ex: Exception){
+            } catch (ex: Exception) {
                 _nearCityWeather.value = Result.failure(ex)
             }
         }

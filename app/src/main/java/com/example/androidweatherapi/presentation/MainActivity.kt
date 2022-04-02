@@ -6,20 +6,18 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.lifecycle.ViewModelProvider
-import com.example.androidweatherapi.data.api.WeatherRepositoryImpl
-import com.example.androidweatherapi.data.api.mapper.WeatherMapper
+import com.example.androidweatherapi.App
 import com.example.androidweatherapi.databinding.ActivityMainBinding
 import com.example.androidweatherapi.domain.entity.detail.Weather
-import com.example.androidweatherapi.domain.usecase.GetNearCitiesUseCase
-import com.example.androidweatherapi.domain.usecase.GetWeatherUseCase
 import com.example.androidweatherapi.presentation.cities.CityAdapter
-import com.example.androidweatherapi.utils.MainViewModelFactory
+import com.example.androidweatherapi.utils.ViewModelFactory
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.snackbar.Snackbar
+import javax.inject.Inject
 
 class MainActivity : AppCompatActivity(), androidx.appcompat.widget.SearchView.OnQueryTextListener {
 
@@ -27,8 +25,6 @@ class MainActivity : AppCompatActivity(), androidx.appcompat.widget.SearchView.O
         private const val CITY_ID = "CITY_ID"
         private const val CITY_COUNT = 10
     }
-
-    private lateinit var viewModel: MainViewModel
 
     private lateinit var binding: ActivityMainBinding
 
@@ -43,13 +39,21 @@ class MainActivity : AppCompatActivity(), androidx.appcompat.widget.SearchView.O
             }
         }
 
+    @Inject
+    lateinit var factory: ViewModelFactory
+
+    private val viewModel: MainViewModel by viewModels{
+        factory
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        (application as App).appComponent.inject(this)
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        init()
         initObservers()
+
         binding.svSearch.setOnQueryTextListener(this)
 
         if (ActivityCompat.checkSelfPermission(
@@ -137,18 +141,5 @@ class MainActivity : AppCompatActivity(), androidx.appcompat.widget.SearchView.O
                 Snackbar.make(binding.root, "Location not found", Snackbar.LENGTH_LONG).show()
             })
         }
-    }
-
-    private fun init() {
-        val weatherRepositoryImpl = WeatherRepositoryImpl(WeatherMapper())
-        val factory = MainViewModelFactory(
-            GetWeatherUseCase(weatherRepositoryImpl),
-            GetNearCitiesUseCase(weatherRepositoryImpl)
-        )
-
-        viewModel = ViewModelProvider(
-            this,
-            factory
-        )[MainViewModel::class.java]
     }
 }

@@ -1,18 +1,16 @@
 package com.example.androidweatherapi.presentation
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
-import com.example.androidweatherapi.data.api.WeatherRepositoryImpl
-import com.example.androidweatherapi.data.api.mapper.WeatherMapper
+import com.example.androidweatherapi.App
 import com.example.androidweatherapi.databinding.ActivityDetailWeatherBinding
 import com.example.androidweatherapi.domain.entity.detail.Weather
 import com.example.androidweatherapi.domain.usecase.GetWeatherByIdUseCase
-import com.example.androidweatherapi.utils.DetailWeatherViewModelFactory
-import kotlinx.coroutines.launch
+import com.example.androidweatherapi.utils.ViewModelFactory
+import javax.inject.Inject
 
 class DetailWeatherActivity : AppCompatActivity() {
 
@@ -20,20 +18,25 @@ class DetailWeatherActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDetailWeatherBinding
 
-    private lateinit var viewModel: DetailWeatherViewModel
+    @Inject
+    lateinit var factory: ViewModelFactory
+
+    private val viewModel: DetailWeatherViewModel by viewModels{
+        factory
+    }
 
     private var CITY_ID = "CITY_ID"
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        (application as App).appComponent.inject(this)
         super.onCreate(savedInstanceState)
         binding = ActivityDetailWeatherBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        init()
+
         initObservers()
 
         viewModel.getWeather(intent?.extras?.getInt(CITY_ID) ?: 0)
     }
-
     private fun initObservers() {
         viewModel.detailWeather.observe(this) {
             it.fold(onSuccess = {
@@ -60,15 +63,6 @@ class DetailWeatherActivity : AppCompatActivity() {
 
     }
 
-    private suspend fun getCityDetailWeather(cityId: Int): Weather? {
-        var cityDetailWeather: Weather? = null
-        lifecycleScope.launch {
-            cityDetailWeather = getWeatherByIdUseCase.invoke(cityId)
-        }.join()
-
-        return cityDetailWeather
-    }
-
     private fun getWindDirection(deg: Int): String {
         var windDirection = ""
         when (deg) {
@@ -83,17 +77,5 @@ class DetailWeatherActivity : AppCompatActivity() {
             in 345..360 -> windDirection = "северный"
         }
         return windDirection
-    }
-
-    private fun init() {
-        val factory = DetailWeatherViewModelFactory(
-            GetWeatherByIdUseCase(
-                WeatherRepositoryImpl(WeatherMapper())
-            )
-        )
-        viewModel = ViewModelProvider(
-            this,
-            factory
-        )[DetailWeatherViewModel::class.java]
     }
 }
