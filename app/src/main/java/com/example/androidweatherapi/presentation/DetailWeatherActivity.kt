@@ -3,32 +3,30 @@ package com.example.androidweatherapi.presentation
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
-import com.example.androidweatherapi.App
 import com.example.androidweatherapi.databinding.ActivityDetailWeatherBinding
 import com.example.androidweatherapi.domain.entity.detail.Weather
 import com.example.androidweatherapi.domain.usecase.GetWeatherByIdUseCase
-import com.example.androidweatherapi.utils.ViewModelFactory
+import com.example.androidweatherapi.utils.AppViewModelFactory
+import dagger.android.support.DaggerAppCompatActivity
 import javax.inject.Inject
 
-class DetailWeatherActivity : AppCompatActivity() {
+class DetailWeatherActivity : DaggerAppCompatActivity() {
 
     private lateinit var getWeatherByIdUseCase: GetWeatherByIdUseCase
 
     private lateinit var binding: ActivityDetailWeatherBinding
 
     @Inject
-    lateinit var factory: ViewModelFactory
+    lateinit var factoryApp: AppViewModelFactory
 
     private val viewModel: DetailWeatherViewModel by viewModels{
-        factory
+        factoryApp
     }
 
     private var CITY_ID = "CITY_ID"
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        (application as App).appComponent.inject(this)
         super.onCreate(savedInstanceState)
         binding = ActivityDetailWeatherBinding.inflate(layoutInflater)
         setContentView(binding.root)

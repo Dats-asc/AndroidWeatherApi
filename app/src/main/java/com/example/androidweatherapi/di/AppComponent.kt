@@ -1,25 +1,34 @@
 package com.example.androidweatherapi.di
 
-import com.example.androidweatherapi.di.module.AppModule
-import com.example.androidweatherapi.di.module.NetModule
-import com.example.androidweatherapi.di.module.RepoModule
-import com.example.androidweatherapi.di.module.ViewModelModule
-import com.example.androidweatherapi.presentation.DetailWeatherActivity
-import com.example.androidweatherapi.presentation.MainActivity
+import com.example.androidweatherapi.App
+import com.example.androidweatherapi.di.module.*
+import dagger.BindsInstance
 import dagger.Component
+import dagger.android.support.AndroidSupportInjectionModule
+import javax.inject.Singleton
 
 
+@Singleton
 @Component(
     modules = [
+        AndroidSupportInjectionModule::class,
         AppModule::class,
         NetModule::class,
         RepoModule::class,
-        ViewModelModule::class
+        ViewModelModule::class,
+        ActivityBindsModule::class,
     ]
 )
 interface AppComponent {
 
-    fun inject(mainActivity: MainActivity)
+    @Component.Builder
+    interface Builder {
 
-    fun inject(detailWeatherActivity: DetailWeatherActivity)
+        @BindsInstance
+        fun application(application: App): Builder
+
+        fun build(): AppComponent
+    }
+
+    fun inject(application: App)
 }

@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.androidweatherapi.di.ViewModelKey
 import com.example.androidweatherapi.presentation.DetailWeatherViewModel
 import com.example.androidweatherapi.presentation.MainViewModel
-import com.example.androidweatherapi.utils.ViewModelFactory
+import com.example.androidweatherapi.utils.AppViewModelFactory
 import dagger.Binds
 import dagger.Module
 import dagger.multibindings.IntoMap
@@ -15,7 +15,7 @@ interface ViewModelModule {
 
     @Binds
     fun bindViewModelFactory(
-        factory: ViewModelFactory
+        factoryApp: AppViewModelFactory
     ): ViewModelProvider.Factory
 
     @Binds

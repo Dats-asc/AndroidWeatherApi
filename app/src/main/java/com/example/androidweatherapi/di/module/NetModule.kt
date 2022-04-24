@@ -1,13 +1,13 @@
 package com.example.androidweatherapi.di.module
 
 import com.example.androidweatherapi.data.api.WeatherApi
+import com.example.androidweatherapi.di.qualifier.UnitsInterceptor
 import dagger.Module
 import dagger.Provides
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import javax.inject.Named
 
 
 private val BASE_URL = "https://api.openweathermap.org/data/2.5/"
@@ -16,7 +16,7 @@ private val BASE_URL = "https://api.openweathermap.org/data/2.5/"
 class NetModule {
 
     @Provides
-    @Named("units")
+    @UnitsInterceptor
     fun unitsInterceptor(): Interceptor = Interceptor { chain ->
         chain.run {
             val updatedRequestUrl = request().url.newBuilder()
@@ -34,7 +34,7 @@ class NetModule {
 
     @Provides
     fun okhttp(
-        @Named("units") unitsInterceptor: Interceptor
+        @UnitsInterceptor unitsInterceptor: Interceptor
     ): OkHttpClient =
         OkHttpClient.Builder()
             .addInterceptor(unitsInterceptor)

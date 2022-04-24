@@ -7,19 +7,18 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import com.example.androidweatherapi.App
 import com.example.androidweatherapi.databinding.ActivityMainBinding
 import com.example.androidweatherapi.domain.entity.detail.Weather
 import com.example.androidweatherapi.presentation.cities.CityAdapter
-import com.example.androidweatherapi.utils.ViewModelFactory
+import com.example.androidweatherapi.utils.AppViewModelFactory
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.snackbar.Snackbar
+import dagger.android.support.DaggerAppCompatActivity
 import javax.inject.Inject
 
-class MainActivity : AppCompatActivity(), androidx.appcompat.widget.SearchView.OnQueryTextListener {
+class MainActivity : DaggerAppCompatActivity(), androidx.appcompat.widget.SearchView.OnQueryTextListener {
 
     companion object {
         private const val CITY_ID = "CITY_ID"
@@ -40,14 +39,13 @@ class MainActivity : AppCompatActivity(), androidx.appcompat.widget.SearchView.O
         }
 
     @Inject
-    lateinit var factory: ViewModelFactory
+    lateinit var factoryApp: AppViewModelFactory
 
     private val viewModel: MainViewModel by viewModels{
-        factory
+        factoryApp
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        (application as App).appComponent.inject(this)
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)

@@ -1,21 +1,23 @@
 package com.example.androidweatherapi
 
 import android.app.Application
-import com.example.androidweatherapi.di.AppComponent
-import com.example.androidweatherapi.di.module.AppModule
-import com.example.androidweatherapi.di.DaggerAppComponent
-import com.example.androidweatherapi.di.module.NetModule
+import dagger.android.AndroidInjector
+import dagger.android.DispatchingAndroidInjector
+import dagger.android.HasAndroidInjector
+import javax.inject.Inject
 
-class App : Application() {
+class App : Application(), HasAndroidInjector {
 
-    lateinit var appComponent: AppComponent
+    @Inject
+    lateinit var androidInjector: DispatchingAndroidInjector<Any>
 
     override fun onCreate() {
         super.onCreate()
-        appComponent = DaggerAppComponent
-            .builder()
-            .appModule(AppModule())
-            .netModule(NetModule())
+        DaggerAppComponent.builder()
+            .application(this)
             .build()
+            .inject(this)
     }
+
+    override fun androidInjector(): AndroidInjector<Any> = androidInjector
 }
